@@ -45,14 +45,15 @@ RUN mkdir -p ~/resources && cd ~/resources && git clone --depth 1 --branch llvmo
     /root/bin/cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" ../llvm && \
     make clangd -j4 && ln -sf $(pwd)/bin/clangd /root/bin/clangd
 
-COPY .vim/ /root/.vim/
-COPY .config/nvim/ /root/.config/nvim/
+COPY dotfiles/vim/.vim/ /root/.vim/
+COPY dotfiles/vim/.config/nvim/ /root/.config/nvim/
+COPY dotfiles/git/.gitconfig /root/.gitconfig
 
 RUN apt-get install -y curl \
     && curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
 RUN cd ~ \
-    && curl -fsSL https://deb.nodesource.com/setup_15.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs
 
 RUN apt-get install -y python3-pip && python3 -m pip install --upgrade pynvim ranger-fm
@@ -64,9 +65,14 @@ ENV TERM=xterm-256color-italic
 RUN nvim --headless +PlugInstall +qall
 
 RUN nvim --headless +"CocInstall -sync coc-clangd coc-pyright coc-marketplace coc-json coc-docker coc-cmake coc-sh coc-snippets coc-pairs coc-vimlsp" +qall  && \
-    nvim --headless +"TSInstall all" +qall
+    nvim --headless +"TSInstallSync all" +qall
 
 RUN mkdir -p /workspace
+
+RUN apt install -y clang-format-10 gdb && \
+    ln -sf $(readlink -f $(which clang-format-10)) /root/bin/clang-format
+
+COPY .zshrc /root/.zshrc
 
 WORKDIR /workspace
 
